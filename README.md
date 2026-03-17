@@ -1,71 +1,82 @@
 # Database MCP
 
-Database MCP is an open-source MCP server for database access in AI agents, IDE assistants, and desktop MCP clients.
+English | [简体中文](README.zh-CN.md)
 
-It provides one consistent MCP interface for:
+[![Go](https://img.shields.io/badge/Go-Database%20MCP-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![Protocol](https://img.shields.io/badge/Protocol-MCP-111827)](https://modelcontextprotocol.io/)
+[![Runtime](https://img.shields.io/badge/Use%20Case-AI%20Agents%20%26%20IDEs-2563EB)](https://github.com/Mingcharun/mingcha_sql_mcp)
 
-- MySQL
-- PostgreSQL
-- Redis
-- SQLite
+An open-source MCP server for database access in AI agents, IDE assistants, and desktop MCP clients.
 
-The project is designed for a very practical reality: many teams do not keep database credentials in system environment variables. They keep them in project files such as `.env`, `application.yml`, `application.properties`, `config.json`, or `config.toml`. Database MCP can detect those configurations directly from a project directory and help the agent connect automatically.
+> Built for the way real projects store database settings: inside repository config files, not only in shell environment variables.
 
-## What Problem This Project Solves
+| Start Here | Continue Reading |
+| --- | --- |
+| [Installation](docs/installation.md) | [Architecture](docs/architecture.md) |
+| [Tool Reference](docs/tool-reference.md) | [Development](docs/development.md) |
+| [Release Guide](docs/release.md) | [中文说明](README.zh-CN.md) |
 
-When people say "let the AI inspect my database", there are usually two different problems hidden inside:
+Database MCP gives models a clean, structured way to work with:
 
-1. How does the AI get database access in a safe, structured way?
-2. How does the AI know where the database credentials are stored?
+| Data Source | Core Capabilities |
+| --- | --- |
+| MySQL | connect, query, write, procedures, status |
+| PostgreSQL | connect, query, write, metadata, status |
+| Redis | connect, commands, Lua, status |
+| SQLite | query, write, project-aware path resolution |
 
-Database MCP solves both:
+It is built for a real-world constraint many teams have:
 
-- It exposes database operations as MCP tools.
-- It can scan common project config files and detect database connection settings.
+database credentials are often not stored in system environment variables. They live inside project files such as `.env`, `application.yml`, `application.properties`, `config.json`, or `config.toml`.
 
-This makes it useful for PHP projects, Go services, Java and Spring applications, Node projects, Python backends, and mixed monorepos.
+Database MCP can detect those project configs and help the AI connect automatically.
 
-## Key Features
+## Why This Project Exists
+
+Most "AI + database" workflows break down at one of two points:
+
+1. the model does not have a safe, structured execution interface
+2. the model does not know where the database configuration lives
+
+Database MCP addresses both:
+
+- it exposes database capabilities as MCP tools
+- it adds project-aware config detection so the AI can work directly from repository configuration
+
+This makes it especially useful in PHP, Go, Java, Spring, Node, Python, and mixed monorepo environments.
+
+## Highlights
 
 - Unified MCP interface for MySQL, PostgreSQL, Redis, and SQLite
-- Query pagination and timeout controls for agent-friendly responses
+- Bounded responses with pagination and timeout controls
 - Connection lifecycle tools such as `connect`, `status`, and `disconnect`
-- Project config detection from common config files
-- Direct "connect from project" tools so the agent does not need to manually reconstruct credentials
-- Open-source Go implementation with a clean `cmd / internal / docs / packages / scripts` layout
+- Project-aware detection from common config files
+- Direct `*_from_project` tools for one-step project-driven connection
+- Clean repository structure for long-term maintenance and open-source collaboration
 
-## How Automatic Calling Actually Works
+## How The "Automatic" Flow Actually Works
 
-This is the most important concept in the whole project:
+Database MCP does not independently scan or execute against your repository.
 
-Database MCP does not "watch your code" by itself.
+The actual runtime flow is:
 
-The actual flow is:
-
-1. Your MCP client starts Database MCP.
-2. The AI sees that Database MCP exposes tools.
-3. The AI decides which tool to call based on your request.
-4. If you ask it to inspect a project database, it can first call:
+1. your MCP client starts `database-mcp`
+2. the AI sees which MCP tools are available
+3. based on your request, the AI chooses the next tool to call
+4. if the project stores credentials in files, the AI can call:
    `project_detect_database_configs`
-5. After it sees the detected config, it can call:
+5. after receiving the detected config, the AI can call:
    `mysql_connect_from_project`
    `pgsql_connect_from_project`
    `redis_connect_from_project`
    or `sqlite_query_from_project`
-6. Once connected, it can continue with normal query or metadata tools.
+6. once connected, the AI continues with normal query or metadata tools
 
-So the automation comes from the AI choosing MCP tools in sequence, not from the MCP process autonomously acting on the repository.
+So the automation comes from tool orchestration by the AI, not from the MCP process acting on its own.
 
-In other words:
+## Supported Project Config Sources
 
-- The AI reads intent from the conversation.
-- The MCP exposes capabilities.
-- The client executes the tool calls.
-- Database MCP performs the actual detection and connection work.
-
-## Supported Config Sources
-
-Current project-based detection supports common config formats such as:
+Current project-based detection supports common sources such as:
 
 - `.env`
 - `.env.local`
@@ -75,11 +86,11 @@ Current project-based detection supports common config formats such as:
 - `config.json`
 - `config.toml`
 
-It also supports a number of common patterns:
+Supported patterns include:
 
-- direct host / port / username / password fields
-- DSN / URL style connection strings
-- Spring style datasource configuration
+- host / port / username / password fields
+- DSN and URL-based connections
+- Spring datasource configuration
 - placeholder expansion such as `${DB_HOST}` and `${DB_PORT:5432}`
 
 ## Tool Coverage
@@ -95,7 +106,7 @@ It also supports a number of common patterns:
 
 ## Quick Start
 
-### Build From Source
+### Build from Source
 
 ```bash
 git clone https://github.com/Mingcharun/mingcha_sql_mcp.git
@@ -103,25 +114,40 @@ cd mingcha_sql_mcp
 ./scripts/build.sh
 ```
 
-Binary output:
+Output:
 
 ```text
 dist/database-mcp
 ```
 
-### Install With Script
+### Install with Script
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mingcharun/mingcha_sql_mcp/main/scripts/install.sh | bash
 ```
 
-### Run With npm
+### Run with npm
 
 ```bash
 npx -y @mingcharun/database-mcp
 ```
 
-## MCP Client Configuration
+### First Tool Call for Project-Based Use
+
+If your database credentials live inside the repository, a typical first call is:
+
+```text
+project_detect_database_configs
+```
+
+Then the AI can continue with one of the project-aware tools:
+
+- `mysql_connect_from_project`
+- `pgsql_connect_from_project`
+- `redis_connect_from_project`
+- `sqlite_query_from_project`
+
+## MCP Client Setup
 
 ### Codex
 
@@ -143,7 +169,7 @@ command = "/absolute/path/to/database-mcp"
 }
 ```
 
-### npm-Based Configuration
+### npm-based Setup
 
 ```json
 {
@@ -156,24 +182,27 @@ command = "/absolute/path/to/database-mcp"
 }
 ```
 
-## Typical Usage Flow
+## Typical Usage Patterns
 
-### If credentials are already known
+### When credentials are already known
 
-Use the normal connection tools:
+Use the direct tools:
 
 - `mysql_connect`
 - `pgsql_connect`
 - `redis_connect`
 - `sqlite_query`
 
-### If credentials live inside the project
+### When credentials live inside the repository
 
-Use the project-aware flow:
+Use the project-aware sequence:
 
 1. `project_detect_database_configs`
-2. `mysql_connect_from_project` or `pgsql_connect_from_project` or `redis_connect_from_project`
-3. query / metadata / write tools
+2. one of:
+   `mysql_connect_from_project`
+   `pgsql_connect_from_project`
+   `redis_connect_from_project`
+3. query, metadata, or write tools
 
 For SQLite:
 
@@ -191,22 +220,19 @@ For SQLite:
 ├── docs/                       # project documentation
 ├── packages/npm/               # npm distribution wrapper
 ├── scripts/                    # build and install scripts
-└── README.md                   # project entry document
+├── README.md                   # English entry document
+└── README.zh-CN.md             # Chinese entry document
 ```
 
 ## Documentation
 
-Start here depending on your role:
-
-- Installation and client setup: [`docs/installation.md`](docs/installation.md)
-- Architecture and automatic tool calling: [`docs/architecture.md`](docs/architecture.md)
-- Tool reference: [`docs/tool-reference.md`](docs/tool-reference.md)
-- Development guide: [`docs/development.md`](docs/development.md)
-- Release guide: [`docs/release.md`](docs/release.md)
+- Installation: [`docs/installation.md`](docs/installation.md)
+- Architecture: [`docs/architecture.md`](docs/architecture.md)
+- Tool Reference: [`docs/tool-reference.md`](docs/tool-reference.md)
+- Development Guide: [`docs/development.md`](docs/development.md)
+- Release Guide: [`docs/release.md`](docs/release.md)
 
 ## Validation
-
-Common verification commands:
 
 ```bash
 go test ./...
@@ -217,8 +243,8 @@ go vet ./...
 
 ## Design Principles
 
-- Make database access usable for agents, not just humans
-- Keep responses bounded and predictable
-- Separate MCP orchestration from database implementation details
-- Support real-world project config layouts
-- Keep the repository clean, maintainable, and open-source friendly
+- make database access usable for agents, not just humans
+- keep outputs bounded and predictable
+- separate MCP orchestration from database implementation
+- support real project configuration layouts
+- keep the repository clean and contributor-friendly

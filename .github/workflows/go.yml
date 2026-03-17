@@ -1,0 +1,333 @@
+name: Release Database MCP
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # macOS arm64 编译任务（Apple Silicon）
+  build-macos-arm64:
+    name: Build macOS ARM64
+    runs-on: macos-latest  # macos-latest 是 arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "Building for macOS arm64 - Version: $VERSION"
+
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=${VERSION}" -o database-mcp ./cmd/database-mcp
+
+          # 重命名
+          mv database-mcp database-mcp_darwin_arm64
+
+          # 验证
+          file database-mcp_darwin_arm64
+          ls -lh database-mcp_darwin_arm64
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-mcp_darwin_arm64
+          path: database-mcp_darwin_arm64
+
+  # macOS amd64 编译任务（Intel）
+  build-macos-amd64:
+    name: Build macOS AMD64
+    runs-on: macos-13  # macos-13 是 x86_64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "Building for macOS amd64 - Version: $VERSION"
+
+          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=${VERSION}" -o database-mcp ./cmd/database-mcp
+
+          # 重命名
+          mv database-mcp database-mcp_darwin_amd64
+
+          # 验证
+          file database-mcp_darwin_amd64
+          ls -lh database-mcp_darwin_amd64
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-mcp_darwin_amd64
+          path: database-mcp_darwin_amd64
+
+  # Linux 编译任务（amd64）
+  build-linux-amd64:
+    name: Build Linux AMD64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "Building for Linux amd64 - Version: $VERSION"
+
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=${VERSION}" -o database-mcp ./cmd/database-mcp
+
+          # 重命名
+          mv database-mcp database-mcp_linux_amd64
+
+          # 验证
+          file database-mcp_linux_amd64
+          ls -lh database-mcp_linux_amd64
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-mcp_linux_amd64
+          path: database-mcp_linux_amd64
+
+  # Windows 编译任务（amd64）
+  build-windows-amd64:
+    name: Build Windows AMD64
+    runs-on: ubuntu-latest  # 交叉编译
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "Building for Windows amd64 - Version: $VERSION"
+
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=${VERSION}" -o database-mcp.exe ./cmd/database-mcp
+
+          # 重命名
+          mv database-mcp.exe database-mcp_windows_amd64.exe
+
+          # 验证
+          file database-mcp_windows_amd64.exe
+          ls -lh database-mcp_windows_amd64.exe
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-mcp_windows_amd64
+          path: database-mcp_windows_amd64.exe
+
+  # Windows 编译任务（arm64）
+  build-windows-arm64:
+    name: Build Windows ARM64
+    runs-on: ubuntu-latest  # 交叉编译
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "Building for Windows arm64 - Version: $VERSION"
+
+          GOOS=windows GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w -X main.Version=${VERSION}" -o database-mcp.exe ./cmd/database-mcp
+
+          # 重命名
+          mv database-mcp.exe database-mcp_windows_arm64.exe
+
+          # 验证
+          file database-mcp_windows_arm64.exe
+          ls -lh database-mcp_windows_arm64.exe
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-mcp_windows_arm64
+          path: database-mcp_windows_arm64.exe
+
+  # 创建 GitHub Release 并发布到 NPM
+  create-release:
+    name: Create Release and Publish NPM
+    needs: [build-macos-arm64, build-macos-amd64, build-linux-amd64, build-windows-amd64, build-windows-arm64]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Display structure
+        run: ls -R ./artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          cp artifacts/database-mcp_darwin_arm64/database-mcp_darwin_arm64 release/
+          cp artifacts/database-mcp_darwin_amd64/database-mcp_darwin_amd64 release/
+          cp artifacts/database-mcp_linux_amd64/database-mcp_linux_amd64 release/
+          cp artifacts/database-mcp_windows_amd64/database-mcp_windows_amd64.exe release/
+          cp artifacts/database-mcp_windows_arm64/database-mcp_windows_arm64.exe release/
+
+          # 设置执行权限
+          chmod +x release/database-mcp_darwin_*
+          chmod +x release/database-mcp_linux_*
+
+          ls -lh release/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/*
+          body: |
+            ## Database MCP - 统一数据库 MCP 服务器
+
+            ### 🚀 快速安装（推荐）
+
+            **使用 npx（无需 Go 环境）**:
+            ```bash
+            npx -y @mingcharun/database-mcp
+            ```
+
+            **配置到 Claude Desktop**:
+            ```json
+            {
+              "mcpServers": {
+                "database_mcp": {
+                  "command": "npx",
+                  "args": ["-y", "@mingcharun/database-mcp"]
+                }
+              }
+            }
+            ```
+
+            ### 📦 支持的平台
+
+            本次发布包含以下平台的二进制文件：
+
+            **macOS**:
+            - ✅ Apple Silicon (ARM64): `database-mcp_darwin_arm64`
+            - ✅ Intel (AMD64): `database-mcp_darwin_amd64`
+
+            **Linux**:
+            - ✅ x64 (AMD64): `database-mcp_linux_amd64`
+
+            **Windows**:
+            - ✅ x64 (AMD64): `database-mcp_windows_amd64.exe`
+            - ✅ ARM64: `database-mcp_windows_arm64.exe`
+
+            ### 🔧 手动下载安装
+
+            **macOS (Apple Silicon)**:
+            ```bash
+            curl -L https://github.com/Mingcharun/mingcha_sql_mcp/releases/latest/download/database-mcp_darwin_arm64 -o database-mcp
+            chmod +x database-mcp
+            mv database-mcp ~/go/bin/
+            ```
+
+            **macOS (Intel)**:
+            ```bash
+            curl -L https://github.com/Mingcharun/mingcha_sql_mcp/releases/latest/download/database-mcp_darwin_amd64 -o database-mcp
+            chmod +x database-mcp
+            mv database-mcp ~/go/bin/
+            ```
+
+            **Linux (amd64)**:
+            ```bash
+            curl -L https://github.com/Mingcharun/mingcha_sql_mcp/releases/latest/download/database-mcp_linux_amd64 -o database-mcp
+            chmod +x database-mcp
+            sudo mv database-mcp /usr/local/bin/
+            ```
+
+            **Windows (amd64)**:
+            下载 `database-mcp_windows_amd64.exe` 并放置到 PATH 环境变量目录中
+
+            ### ✨ 集成的数据库
+
+            - ✅ **MySQL** - 10个工具（连接、查询、写操作、存储过程、连接状态）
+            - ✅ **PostgreSQL** - 10个工具（连接、查询、写操作、元数据、连接状态）
+            - ✅ **Redis** - 5个工具（连接、命令执行、Lua脚本、连接状态）
+            - ✅ **SQLite** - 1个工具（统一查询接口）
+
+            ### 📖 使用说明
+
+            在 Claude Desktop 或 Codex 中直接对话：
+            ```
+            连接到我的 MySQL 数据库
+            查询 Redis 中的所有键
+            执行 PostgreSQL 查询
+            ```
+
+            ### 📚 完整文档
+
+            查看 [README.md](https://github.com/Mingcharun/mingcha_sql_mcp/blob/main/README.md) 了解更多信息。
+
+            ### 🐛 问题反馈
+
+            如有问题，请在 [GitHub Issues](https://github.com/Mingcharun/mingcha_sql_mcp/issues) 中反馈。
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Prepare NPM package
+        run: |
+          # 复制 npm 目录
+          cp -r packages/npm npm-package
+          cd npm-package
+
+          # 创建 bin 目录
+          mkdir -p bin
+
+          # 获取版本号（去掉 v 前缀）
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "NPM Version: $VERSION"
+
+          # 更新 package.json 版本
+          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
+
+          cat package.json
+
+      - name: Publish to NPM
+        run: |
+          cd npm-package
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

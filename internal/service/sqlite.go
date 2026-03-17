@@ -36,28 +36,36 @@ func handleSQLiteQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 		return mcp.NewToolResultError(err.Error()), nil
 	}
 
+	queryCtx, cancel := withOptionalTimeout(ctx, request)
+	defer cancel()
+
+	result, err := runSQLiteQuery(queryCtx, dbPath, sqlQuery, request)
+	if err != nil {
+		return toolResultErrorf("%v", err)
+	}
+	return jsonToolResult(result)
+}
+
+func runSQLiteQuery(ctx context.Context, dbPath, sqlQuery string, request mcp.CallToolRequest) (map[string]interface{}, error) {
 	if err := sqlitedb.InitDB(dbPath); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to connect to database: %v", err)), nil
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer sqlitedb.CloseDB()
 
 	db := sqlitedb.DB()
 	if db == nil {
-		return mcp.NewToolResultError("database not initialized"), nil
+		return nil, fmt.Errorf("database not initialized")
 	}
-
-	queryCtx, cancel := withOptionalTimeout(ctx, request)
-	defer cancel()
 
 	queryArgs := requestArrayArgs(request, "args")
 	if isSQLiteExecStatement(sqlQuery) {
-		result, err := db.ExecContext(queryCtx, sqlQuery, queryArgs...)
+		result, err := db.ExecContext(ctx, sqlQuery, queryArgs...)
 		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("Query execution failed: %v", err)), nil
+			return nil, fmt.Errorf("query execution failed: %w", err)
 		}
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("Failed to get rows affected: %v", err)), nil
+			return nil, fmt.Errorf("failed to get rows affected: %w", err)
 		}
 		response := map[string]interface{}{
 			"type":         "modification",
@@ -68,18 +76,18 @@ func handleSQLiteQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 				response["lastInsertId"] = lastID
 			}
 		}
-		return jsonToolResult(response)
+		return response, nil
 	}
 
-	rows, err := db.QueryContext(queryCtx, sqlQuery, queryArgs...)
+	rows, err := db.QueryContext(ctx, sqlQuery, queryArgs...)
 	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Query execution failed: %v", err)), nil
+		return nil, fmt.Errorf("query execution failed: %w", err)
 	}
 	defer rows.Close()
 
 	columns, err := rows.Columns()
 	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to get columns: %v", err)), nil
+		return nil, fmt.Errorf("failed to get columns: %w", err)
 	}
 
 	var (
@@ -98,7 +106,7 @@ func handleSQLiteQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 			valuePtrs[i] = &values[i]
 		}
 		if err := rows.Scan(valuePtrs...); err != nil {
-			return mcp.NewToolResultError(fmt.Sprintf("Failed to scan row: %v", err)), nil
+			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 
 		if skipped < offset {
@@ -122,14 +130,14 @@ func handleSQLiteQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 		results = append(results, row)
 	}
 	if err := rows.Err(); err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Row iteration error: %v", err)), nil
+		return nil, fmt.Errorf("row iteration error: %w", err)
 	}
 
 	if hasMore {
 		nextOffset = offset + len(results)
 	}
 
-	return jsonToolResult(map[string]interface{}{
+	return map[string]interface{}{
 		"type":        "select",
 		"data":        results,
 		"count":       len(results),
@@ -137,7 +145,7 @@ func handleSQLiteQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 		"has_more":    hasMore,
 		"next_offset": nextOffset,
 		"truncated":   hasMore,
-	})
+	}, nil
 }
 
 func isSQLiteExecStatement(sqlText string) bool {

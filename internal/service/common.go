@@ -35,6 +35,7 @@ func New(serviceName, serviceVersion string) *server.MCPServer {
 	registerPostgresTools(mcpServer)
 	registerRedisTools(mcpServer)
 	registerSQLiteTools(mcpServer)
+	registerProjectConfigTools(mcpServer)
 
 	return mcpServer
 }

@@ -6,6 +6,8 @@
 2. 怎么接入常见 MCP Client
 3. 怎么验证它已经可用
 
+如果你的数据库配置不在系统环境变量里，而是在项目配置文件中，也没关系。当前版本支持直接扫描项目目录里的常见配置文件，并自动建立连接。
+
 ## 先选适合你的安装方式
 
 ### 方式一：本地直接安装二进制
@@ -182,6 +184,32 @@ mcp-inspector /absolute/path/to/database-mcp
 - 固定 release 版本
 - 不依赖 `latest`
 - 在升级前先跑回归验证
+
+## 没有系统环境变量时怎么用
+
+如果你的项目把数据库配置写在源码仓库里，可以直接使用以下工具：
+
+- `project_detect_database_configs`
+- `mysql_connect_from_project`
+- `pgsql_connect_from_project`
+- `redis_connect_from_project`
+- `sqlite_query_from_project`
+
+典型流程：
+
+1. 把项目根目录传给 `project_detect_database_configs`
+2. 看 MCP 识别到了哪个配置文件
+3. 再调用对应的 `*_from_project` 工具
+
+支持的常见配置文件包括：
+
+- `.env`
+- `.env.local`
+- `application.yml`
+- `application.yaml`
+- `application.properties`
+- `config.json`
+- `config.toml`
 
 ## 常见问题
 

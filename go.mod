@@ -3,12 +3,14 @@ module github.com/Mingcharun/database-mcp
 go 1.25.0
 
 require (
+	github.com/BurntSushi/toml v1.5.0
 	github.com/Xuzan9396/zmysql v0.0.3
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/mark3labs/mcp-go v0.41.0
 	github.com/redis/go-redis/v9 v9.14.0
+	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.39.0
 )
 
@@ -40,7 +42,6 @@ require (
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.66.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect

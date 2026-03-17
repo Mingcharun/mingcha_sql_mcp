@@ -20,6 +20,7 @@
 推荐流程：
 
 1. 先连接目标数据库
+   如果连接信息写在项目配置文件中，先调用 `project_detect_database_configs`
 2. 优先使用结构类工具而不是直接全表扫描
 3. 查询时总是带 `timeout_ms`
 4. 大结果集总是带 `max_rows`
@@ -27,9 +28,10 @@
 示例思路：
 
 - MySQL: 先 `mysql_connect`，再 `mysql_query`
-- PostgreSQL: 先 `pgsql_connect`，再 `pgsql_list_tables`、`pgsql_list_columns`
-- Redis: 先 `redis_connect`，再 `redis_command`
-- SQLite: 直接 `sqlite_query`
+- MySQL: `mysql_connect` 或 `mysql_connect_from_project`，再 `mysql_query`
+- PostgreSQL: `pgsql_connect` 或 `pgsql_connect_from_project`，再 `pgsql_list_tables`、`pgsql_list_columns`
+- Redis: `redis_connect` 或 `redis_connect_from_project`，再 `redis_command`
+- SQLite: `sqlite_query` 或 `sqlite_query_from_project`
 
 推荐提示词：
 
@@ -162,7 +164,28 @@
 - 固定发布版本，不直接依赖 `latest`
 - 将高风险写操作放到受控环境中
 
-## 场景七：二次开发与扩展
+## 场景七：配置写在项目文件里，而不是系统环境变量
+
+这正是当前版本重点补强的场景。
+
+适合：
+
+- Java / Spring 项目
+- Node 项目
+- Python 项目
+- Go 项目
+- 使用 `.env`、`yaml`、`json`、`toml`、`properties` 的项目
+
+推荐流程：
+
+1. 调用 `project_detect_database_configs`
+2. 确认识别结果
+3. 调用目标数据库的 `*_connect_from_project`
+4. 再执行查询或写操作
+
+这样 AI 不需要你先把数据库账号密码手工抄成 MCP 参数。
+
+## 场景八：二次开发与扩展
 
 如果你是维护者，而不是单纯使用者，建议阅读：
 

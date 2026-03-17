@@ -7,6 +7,7 @@ Database MCP 是一个为 AI Agent、IDE 与桌面 MCP Client 提供统一数据
 - 连接 MySQL、PostgreSQL、Redis、SQLite
 - 查询数据、执行写操作、检查结构与元数据
 - 在 Agent 工作流里控制超时、分页与结果规模
+- 从项目配置文件自动识别数据库连接信息
 - 让 IDE、桌面客户端和团队内部工具复用同一套数据库能力
 
 项目由 Mingcharun 团队维护，仓库的目录、命名、文档与发布流程都已经按长期维护场景重新整理。
@@ -56,6 +57,26 @@ Database MCP 是一个为 AI Agent、IDE 与桌面 MCP Client 提供统一数据
 - `truncated`
 
 这意味着你可以把它直接接在 Agent 前面，而不用担心一条大查询把会话结果塞爆。
+
+### 项目配置自动识别
+
+很多项目不会把数据库连接信息放进系统环境变量，而是写在仓库配置文件里。当前版本已经支持让 MCP 直接扫描项目目录并识别常见配置来源，例如：
+
+- `.env` / `.env.local`
+- `application.yml` / `application.yaml`
+- `application.properties`
+- `config.json`
+- `config.toml`
+
+新增能力包括：
+
+- `project_detect_database_configs`
+- `mysql_connect_from_project`
+- `pgsql_connect_from_project`
+- `redis_connect_from_project`
+- `sqlite_query_from_project`
+
+这意味着 AI 不一定要先读取配置文件再手工拼参数，也可以直接把项目目录交给 MCP 处理。
 
 ## 快速开始
 

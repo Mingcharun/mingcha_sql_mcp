@@ -1,0 +1,52 @@
+{
+  "name": "@mingcharun/database-mcp",
+  "version": "1.0.8",
+  "description": "Unified database MCP server for AI agents and IDEs",
+  "main": "bin/database-mcp.js",
+  "bin": {
+    "database-mcp": "bin/database-mcp.js"
+  },
+  "files": [
+    "bin",
+    "install.js",
+    "package.json",
+    "README.md"
+  ],
+  "scripts": {
+    "postinstall": "node install.js",
+    "test": "node bin/database-mcp.js --version"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "database",
+    "mysql",
+    "postgresql",
+    "redis",
+    "sqlite",
+    "unified-database",
+    "golang"
+  ],
+  "author": "Mingcharun Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mingcharun/mingcha_sql_mcp.git"
+  },
+  "homepage": "https://github.com/Mingcharun/mingcha_sql_mcp#readme",
+  "bugs": {
+    "url": "https://github.com/Mingcharun/mingcha_sql_mcp/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
+}

@@ -1,86 +1,101 @@
 # Database MCP
 
-Database MCP 是一个为 AI Agent、IDE 与桌面 MCP Client 提供统一数据库能力的 Go MCP Server。
+Database MCP is an open-source MCP server for database access in AI agents, IDE assistants, and desktop MCP clients.
 
-它的目标不是“再封装一套数据库 SDK”，而是让模型在一个稳定、可控、可部署的 MCP 进程里完成这些常见任务：
+It provides one consistent MCP interface for:
 
-- 连接 MySQL、PostgreSQL、Redis、SQLite
-- 查询数据、执行写操作、检查结构与元数据
-- 在 Agent 工作流里控制超时、分页与结果规模
-- 从项目配置文件自动识别数据库连接信息
-- 让 IDE、桌面客户端和团队内部工具复用同一套数据库能力
+- MySQL
+- PostgreSQL
+- Redis
+- SQLite
 
-项目由 Mingcharun 团队维护，仓库的目录、命名、文档与发布流程都已经按长期维护场景重新整理。
+The project is designed for a very practical reality: many teams do not keep database credentials in system environment variables. They keep them in project files such as `.env`, `application.yml`, `application.properties`, `config.json`, or `config.toml`. Database MCP can detect those configurations directly from a project directory and help the agent connect automatically.
 
-## 适合什么场景
+## What Problem This Project Solves
 
-### 1. 给 AI IDE 提供数据库上下文
+When people say "let the AI inspect my database", there are usually two different problems hidden inside:
 
-如果你希望 Codex、Claude Desktop 或其他 MCP Client 能直接查询数据库、查看表结构、执行 Redis 命令，这个项目就是一个标准入口。
+1. How does the AI get database access in a safe, structured way?
+2. How does the AI know where the database credentials are stored?
 
-### 2. 给 Agent 提供受控的数据访问能力
+Database MCP solves both:
 
-项目内置分页、行数限制、请求超时与连接状态能力，适合放在自动化 Agent、工作流编排器或内部智能助手后面使用。
+- It exposes database operations as MCP tools.
+- It can scan common project config files and detect database connection settings.
 
-### 3. 统一多数据库接入方式
+This makes it useful for PHP projects, Go services, Java and Spring applications, Node projects, Python backends, and mixed monorepos.
 
-如果团队同时维护 MySQL、PostgreSQL、Redis 和 SQLite，Database MCP 可以把这些能力统一暴露给上层工具，而不需要每个 Agent 都单独接一个数据库 SDK。
+## Key Features
 
-### 4. 做本地开发排障和结构探查
+- Unified MCP interface for MySQL, PostgreSQL, Redis, and SQLite
+- Query pagination and timeout controls for agent-friendly responses
+- Connection lifecycle tools such as `connect`, `status`, and `disconnect`
+- Project config detection from common config files
+- Direct "connect from project" tools so the agent does not need to manually reconstruct credentials
+- Open-source Go implementation with a clean `cmd / internal / docs / packages / scripts` layout
 
-它很适合做 schema 查看、表字段检查、索引排查、Redis key 操作、SQLite 本地文件调试这类日常工作。
+## How Automatic Calling Actually Works
 
-## 当前能力
+This is the most important concept in the whole project:
 
-| 数据源 | 工具数量 | 主要能力 |
-| --- | ---: | --- |
-| MySQL | 10 | 连接、查询、写操作、存储过程、连接状态 |
-| PostgreSQL | 10 | 连接、查询、写操作、schema/table/column/index 元数据、连接状态 |
-| Redis | 5 | 连接、命令执行、Lua 脚本、连接状态 |
-| SQLite | 1 | 单文件数据库查询与写操作 |
-| 合计 | 26 | 统一通过 MCP 暴露 |
+Database MCP does not "watch your code" by itself.
 
-### 查询保护能力
+The actual flow is:
 
-查询类工具统一支持以下参数，用于控制 Agent 会话中的资源使用：
+1. Your MCP client starts Database MCP.
+2. The AI sees that Database MCP exposes tools.
+3. The AI decides which tool to call based on your request.
+4. If you ask it to inspect a project database, it can first call:
+   `project_detect_database_configs`
+5. After it sees the detected config, it can call:
+   `mysql_connect_from_project`
+   `pgsql_connect_from_project`
+   `redis_connect_from_project`
+   or `sqlite_query_from_project`
+6. Once connected, it can continue with normal query or metadata tools.
 
-- `offset`
-- `max_rows`
-- `timeout_ms`
+So the automation comes from the AI choosing MCP tools in sequence, not from the MCP process autonomously acting on the repository.
 
-查询结果统一返回分页相关字段：
+In other words:
 
-- `count`
-- `offset`
-- `has_more`
-- `next_offset`
-- `truncated`
+- The AI reads intent from the conversation.
+- The MCP exposes capabilities.
+- The client executes the tool calls.
+- Database MCP performs the actual detection and connection work.
 
-这意味着你可以把它直接接在 Agent 前面，而不用担心一条大查询把会话结果塞爆。
+## Supported Config Sources
 
-### 项目配置自动识别
+Current project-based detection supports common config formats such as:
 
-很多项目不会把数据库连接信息放进系统环境变量，而是写在仓库配置文件里。当前版本已经支持让 MCP 直接扫描项目目录并识别常见配置来源，例如：
-
-- `.env` / `.env.local`
-- `application.yml` / `application.yaml`
+- `.env`
+- `.env.local`
+- `application.yml`
+- `application.yaml`
 - `application.properties`
 - `config.json`
 - `config.toml`
 
-新增能力包括：
+It also supports a number of common patterns:
 
-- `project_detect_database_configs`
-- `mysql_connect_from_project`
-- `pgsql_connect_from_project`
-- `redis_connect_from_project`
-- `sqlite_query_from_project`
+- direct host / port / username / password fields
+- DSN / URL style connection strings
+- Spring style datasource configuration
+- placeholder expansion such as `${DB_HOST}` and `${DB_PORT:5432}`
 
-这意味着 AI 不一定要先读取配置文件再手工拼参数，也可以直接把项目目录交给 MCP 处理。
+## Tool Coverage
 
-## 快速开始
+| Category | Tools |
+| --- | ---: |
+| MySQL | 11 |
+| PostgreSQL | 11 |
+| Redis | 6 |
+| SQLite | 2 |
+| Project Config Detection | 1 |
+| Total | 31 |
 
-### 从源码构建
+## Quick Start
+
+### Build From Source
 
 ```bash
 git clone https://github.com/Mingcharun/mingcha_sql_mcp.git
@@ -88,25 +103,25 @@ cd mingcha_sql_mcp
 ./scripts/build.sh
 ```
 
-构建产物默认位于：
+Binary output:
 
 ```text
 dist/database-mcp
 ```
 
-### 通过安装脚本安装
+### Install With Script
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Mingcharun/mingcha_sql_mcp/main/scripts/install.sh | bash
 ```
 
-### 通过 npm 运行
+### Run With npm
 
 ```bash
 npx -y @mingcharun/database-mcp
 ```
 
-## MCP Client 配置示例
+## MCP Client Configuration
 
 ### Codex
 
@@ -128,7 +143,7 @@ command = "/absolute/path/to/database-mcp"
 }
 ```
 
-### 通过 npm 配置
+### npm-Based Configuration
 
 ```json
 {
@@ -141,37 +156,57 @@ command = "/absolute/path/to/database-mcp"
 }
 ```
 
-## 仓库结构
+## Typical Usage Flow
+
+### If credentials are already known
+
+Use the normal connection tools:
+
+- `mysql_connect`
+- `pgsql_connect`
+- `redis_connect`
+- `sqlite_query`
+
+### If credentials live inside the project
+
+Use the project-aware flow:
+
+1. `project_detect_database_configs`
+2. `mysql_connect_from_project` or `pgsql_connect_from_project` or `redis_connect_from_project`
+3. query / metadata / write tools
+
+For SQLite:
+
+1. `project_detect_database_configs`
+2. `sqlite_query_from_project`
+
+## Repository Layout
 
 ```text
 .
-├── cmd/database-mcp/           # 二进制入口
-├── internal/service/           # MCP tool 注册、参数解析、响应封装
-├── internal/database/          # 各数据库底层实现
-│   ├── mysql/
-│   ├── postgres/
-│   ├── redis/
-│   └── sqlite/
-├── docs/                       # 项目文档
-├── packages/npm/               # npm 分发包装
-├── scripts/                    # 构建与安装脚本
-└── README.md                   # 仓库总入口
+├── cmd/database-mcp/           # binary entrypoint
+├── internal/service/           # MCP tool registration and handlers
+├── internal/database/          # database implementations
+├── internal/projectconfig/     # project config detection and parsing
+├── docs/                       # project documentation
+├── packages/npm/               # npm distribution wrapper
+├── scripts/                    # build and install scripts
+└── README.md                   # project entry document
 ```
 
-## 文档导航
+## Documentation
 
-如果你是第一次接触这个项目，建议按下面顺序阅读：
+Start here depending on your role:
 
-1. 安装与客户端接入：[`docs/installation.md`](docs/installation.md)
-2. 场景化使用说明：[`docs/scenarios.md`](docs/scenarios.md)
-3. 工具参考：[`docs/tool-reference.md`](docs/tool-reference.md)
-4. 开发与扩展：[`docs/development.md`](docs/development.md)
-5. 发布流程：[`docs/release.md`](docs/release.md)
-6. npm 包维护：[`docs/npm-package.md`](docs/npm-package.md)
+- Installation and client setup: [`docs/installation.md`](docs/installation.md)
+- Architecture and automatic tool calling: [`docs/architecture.md`](docs/architecture.md)
+- Tool reference: [`docs/tool-reference.md`](docs/tool-reference.md)
+- Development guide: [`docs/development.md`](docs/development.md)
+- Release guide: [`docs/release.md`](docs/release.md)
 
-## 测试与验证
+## Validation
 
-常用验证命令：
+Common verification commands:
 
 ```bash
 go test ./...
@@ -180,36 +215,10 @@ go vet ./...
 ./scripts/build.sh
 ```
 
-### 集成测试环境变量
+## Design Principles
 
-MySQL:
-
-- `MYSQL_TEST_USER`
-- `MYSQL_TEST_PASSWORD`
-- `MYSQL_TEST_ADDR`
-- `MYSQL_TEST_DATABASE`
-
-PostgreSQL:
-
-- `POSTGRES_TEST_HOST`
-- `POSTGRES_TEST_PORT`
-- `POSTGRES_TEST_USER`
-- `POSTGRES_TEST_PASSWORD`
-- `POSTGRES_TEST_DATABASE`
-- `POSTGRES_TEST_SSLMODE`
-
-Redis:
-
-- `REDIS_TEST_ADDR`
-- `REDIS_TEST_PASSWORD`
-- `REDIS_TEST_DB`
-
-未配置时，对应的集成测试会自动跳过。
-
-## 设计原则
-
-- 用一个 MCP 进程统一暴露多数据库能力
-- 让工具更适合 Agent，而不是只适合人手工调用
-- 让查询行为具备超时、分页和结果规模控制
-- 让数据库实现与 MCP 层分离，便于长期维护
-- 让部署、安装、测试和发布流程尽量可预测
+- Make database access usable for agents, not just humans
+- Keep responses bounded and predictable
+- Separate MCP orchestration from database implementation details
+- Support real-world project config layouts
+- Keep the repository clean, maintainable, and open-source friendly

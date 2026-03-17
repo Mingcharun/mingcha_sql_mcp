@@ -1,20 +1,14 @@
 # `@mingcharun/database-mcp`
 
-这是 Database MCP 的 npm 分发包。
+This package is the npm distribution wrapper for Database MCP.
 
-它适合这些场景：
-
-- 本机没有 Go 环境
-- 希望用 `npx` 直接启动
-- 团队内部统一通过 npm 分发 MCP 可执行文件
-
-## 快速使用
+## Quick Start
 
 ```bash
 npx -y @mingcharun/database-mcp
 ```
 
-## 在 MCP Client 中配置
+## MCP Client Example
 
 ```json
 {
@@ -27,20 +21,19 @@ npx -y @mingcharun/database-mcp
 }
 ```
 
-## 它不会做什么
+## What Happens During Install
 
-这个 npm 包不会在本地编译 Go 源码。
+The npm package does not build Go source locally.
 
-它会在安装阶段：
+Instead it:
 
-1. 读取 npm 包版本
-2. 判断操作系统和架构
-3. 从 GitHub Release 下载对应二进制
-4. 通过 `bin/database-mcp.js` 启动真实可执行文件
+1. reads the npm version
+2. detects platform and architecture
+3. downloads the matching GitHub release binary
+4. launches that binary through `bin/database-mcp.js`
 
-## 维护文档
+## Maintainers
 
-如果你在维护这个包，而不是在使用它，请继续阅读：
+If you are maintaining the package rather than using it, continue with:
 
-- [`docs/npm-package.md`](../../docs/npm-package.md)
 - [`docs/release.md`](../../docs/release.md)

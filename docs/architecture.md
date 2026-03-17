@@ -6,6 +6,16 @@ This document explains how Database MCP works, especially the part that often ca
 
 ## Core Idea
 
+```mermaid
+graph TD
+    Client[MCP Client] -->|JSON-RPC| Server[Database MCP Server]
+    Server --> Service[Internal Service Layer]
+    Service --> ProjConfig[Project Config Layer]
+    Service --> DBImpl[Database Implementations]
+    ProjConfig -.->|Reads| ConfigFiles[.env / yaml / toml]
+    DBImpl -->|Connects| DB[(MySQL / PG / Redis / SQLite)]
+```
+
 Database MCP is an MCP server.
 
 That means it does not act on its own. It exposes tools. The MCP client and the AI decide when to call those tools.
@@ -156,3 +166,7 @@ Database MCP handles:
 - connecting to databases
 - executing database operations
 - returning structured outputs
+
+---
+
+> **署名：** 明察网安、涉网犯罪技术侦查实验室

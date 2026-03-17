@@ -4,6 +4,15 @@ This guide explains how to build, validate, and publish Database MCP.
 
 ## Pre-Release Checklist
 
+```mermaid
+graph TD
+    Code[Code & Docs] --> Test[Run Tests & Build]
+    Test --> Tag[Git Tag]
+    Tag --> Actions[GitHub Actions]
+    Actions --> Release[GitHub Release<br>Binaries]
+    Actions --> NPM[NPM Package]
+```
+
 Before tagging a release, confirm:
 
 1. `README.md` and `docs/` reflect the current implementation
@@ -133,3 +142,7 @@ Result:
 Result:
 
 - users install the right code but copy the wrong config
+
+---
+
+> **署名：** 明察网安、涉网犯罪技术侦查实验室

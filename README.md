@@ -33,6 +33,17 @@ Database MCP can detect those project configs and help the AI connect automatica
 
 ## Why This Project Exists
 
+### Architecture and Execution Logic
+
+```mermaid
+graph TD
+    AI[AI Agent / IDE] -->|Tool Call| MCP[MCP Client]
+    MCP -->|JSON-RPC| DBMCP[Database MCP Server]
+    DBMCP -->|Read| Config[Project Config<br>.env / application.yml, etc.]
+    DBMCP -->|Connect & Execute| DB[(Database<br>MySQL / PostgreSQL / Redis / SQLite)]
+    Config -.->|Auto Detect| DBMCP
+```
+
 Most "AI + database" workflows break down at one of two points:
 
 1. the model does not have a safe, structured execution interface
@@ -248,3 +259,7 @@ go vet ./...
 - separate MCP orchestration from database implementation
 - support real project configuration layouts
 - keep the repository clean and contributor-friendly
+
+---
+
+> **署名：** 明察网安、涉网犯罪技术侦查实验室

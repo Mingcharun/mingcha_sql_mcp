@@ -4,6 +4,23 @@ This document groups tools by job, so contributors and users can quickly identif
 
 ## Shared Query Controls
 
+```mermaid
+sequenceDiagram
+    participant AI
+    participant MCP
+    participant DB
+    AI->>MCP: project_detect_database_configs
+    MCP-->>AI: Return Config Candidates
+    AI->>MCP: mysql_connect_from_project
+    MCP->>DB: Establish Connection
+    DB-->>MCP: Success
+    MCP-->>AI: Connected
+    AI->>MCP: mysql_query
+    MCP->>DB: Execute SQL
+    DB-->>MCP: Results
+    MCP-->>AI: Structured Data
+```
+
 Many query-style tools support:
 
 - `offset`
@@ -165,3 +182,7 @@ Supported patterns include:
 - URL / DSN strings
 - Spring datasource fields
 - placeholder expansion like `${VAR}` and `${VAR:default}`
+
+---
+
+> **署名：** 明察网安、涉网犯罪技术侦查实验室

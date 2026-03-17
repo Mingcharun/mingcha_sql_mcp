@@ -23,6 +23,13 @@ npx -y @mingcharun/database-mcp
 
 ## What Happens During Install
 
+```mermaid
+graph LR
+    NPM[npx @mingcharun/database-mcp] --> Detect[Detect Platform & Arch]
+    Detect --> DL[Download GitHub Release Binary]
+    DL --> Exec[Execute binary via bin/database-mcp.js]
+```
+
 The npm package does not build Go source locally.
 
 Instead it:
@@ -37,3 +44,7 @@ Instead it:
 If you are maintaining the package rather than using it, continue with:
 
 - [`docs/release.md`](../../docs/release.md)
+
+---
+
+> **署名：** 明察网安、涉网犯罪技术侦查实验室

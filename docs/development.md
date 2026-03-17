@@ -4,6 +4,17 @@ This guide is for maintainers and contributors.
 
 ## Repository Layout
 
+```mermaid
+graph TD
+    Cmd[cmd/database-mcp] --> Service[internal/service]
+    Service --> DB[internal/database]
+    Service --> Config[internal/projectconfig]
+    DB --> MySQL[mysql]
+    DB --> Postgres[postgres]
+    DB --> Redis[redis]
+    DB --> SQLite[sqlite]
+```
+
 ```text
 cmd/database-mcp/
   main.go
@@ -157,3 +168,7 @@ These changes must update documentation:
 - changed return fields
 - new supported config sources
 - changes to binary names or package names
+
+---
+
+> **署名：** 明察网安、涉网犯罪技术侦查实验室

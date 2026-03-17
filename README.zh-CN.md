@@ -33,6 +33,17 @@ Database MCP 可以直接从项目目录中识别这些配置，并帮助 AI 自
 
 ## 这个项目解决什么问题
 
+### 架构与运行逻辑
+
+```mermaid
+graph TD
+    AI[AI Agent / IDE] -->|Tool Call| MCP[MCP Client]
+    MCP -->|JSON-RPC| DBMCP[Database MCP Server]
+    DBMCP -->|读取| Config[项目配置文件<br>.env / application.yml等]
+    DBMCP -->|连接 & 执行| DB[(数据库<br>MySQL / PostgreSQL / Redis / SQLite)]
+    Config -.->|自动识别| DBMCP
+```
+
 大多数 “AI 访问数据库” 的工作流，都会卡在两个地方：
 
 1. 模型没有一个安全、结构化的数据库执行接口
@@ -255,3 +266,7 @@ go vet ./...
 - 将 MCP 编排层与数据库实现层解耦
 - 支持真实项目中的配置文件形态
 - 让仓库保持整洁、易维护、易贡献
+
+---
+
+> **署名：** 明察网安、涉网犯罪技术侦查实验室

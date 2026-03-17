@@ -4,6 +4,16 @@ This guide explains how to install Database MCP, connect it to MCP clients, and 
 
 ## Choose an Installation Method
 
+```mermaid
+graph LR
+    User((User)) -->|Wants local binary| Script[install.sh]
+    User -->|Wants source build| Build[build.sh]
+    User -->|Wants Node env| NPM[npx @mingcharun/database-mcp]
+    Script --> Bin[dist/database-mcp]
+    Build --> Bin
+    NPM --> NodeRun[Run via Node.js]
+```
+
 ### Install a Local Binary
 
 Best for:
@@ -198,3 +208,7 @@ Check:
 - platform support
 - GitHub release asset availability
 - network access to release downloads
+
+---
+
+> **署名：** 明察网安、涉网犯罪技术侦查实验室
